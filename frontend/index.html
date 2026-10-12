@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scholar Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ── tokens ── */
+  :root {
+    --bg:           #0f0f12;
+    --surface:      #18181d;
+    --surface-2:    #222228;
+    --surface-3:    #2a2a32;
+    --border:       #2e2e38;
+    --border-focus: #7c9885;
+    --text:         #edeae4;
+    --text-dim:     #8a8799;
+    --text-muted:   #55535f;
+    --green:        #7c9885;
+    --green-soft:   rgba(124,152,133,.13);
+    --green-glow:   rgba(124,152,133,.06);
+    --amber:        #c9956a;
+    --amber-soft:   rgba(201,149,106,.12);
+    --blue:         #6b8cba;
+    --blue-soft:    rgba(107,140,186,.12);
+    --red:          #b06060;
+    --red-soft:     rgba(176,96,96,.12);
+    --radius-card:  16px;
+    --radius-tag:   20px;
+    --radius-btn:   10px;
+    --shadow:       0 8px 32px rgba(0,0,0,.45);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 16px 80px;
+  }
+
+  /* ── header ── */
+  .hero { text-align: center; margin-bottom: 40px; }
+
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .logo-icon {
+    width: 38px; height: 38px;
+    background: var(--green-soft);
+    border: 1px solid var(--border-focus);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .logo-icon svg { width: 20px; height: 20px; stroke: var(--green); }
+
+  .logo-text {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: -.02em;
+    color: var(--text);
+  }
+
+  .hero h1 {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    letter-spacing: -.03em;
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+
+  .hero h1 span { color: var(--green); }
+
+  .hero p {
+    color: var(--text-dim);
+    font-size: .95rem;
+    line-height: 1.6;
+    max-width: 460px;
+    margin: 0 auto;
+  }
+
+  /* ── search box ── */
+  .search-wrap {
+    width: 100%;
+    max-width: 660px;
+    position: relative;
+    margin-bottom: 32px;
+  }
+
+  .search-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 16px 60px 16px 20px;
+    transition: border-color .2s, box-shadow .2s;
+  }
+
+  .search-box:focus-within {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px var(--green-glow);
+  }
+
+  textarea#q {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    color: var(--text);
+    font-family: "Inter", sans-serif;
+    font-size: 1rem;
+    line-height: 1.55;
+    overflow-y: hidden;
+  }
+
+  textarea#q::placeholder { color: var(--text-muted); }
+
+  .send-btn {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    width: 36px; height: 36px;
+    border-radius: var(--radius-btn);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-dim);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+
+  .send-btn:hover { border-color: var(--green); color: var(--green); }
+  .send-btn:active { transform: scale(.93); }
+  .send-btn.loading { pointer-events: none; }
+
+  .send-btn .icon-send, .send-btn .icon-spin { transition: opacity .15s; }
+  .send-btn .icon-spin { display: none; }
+  .send-btn.loading .icon-send { display: none; }
+  .send-btn.loading .icon-spin { display: block; animation: spin .7s linear infinite; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── hint chips ── */
+  .hints {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .hint {
+    font-size: .78rem;
+    color: var(--text-dim);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-tag);
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all .15s;
+    user-select: none;
+  }
+
+  .hint:hover { border-color: var(--green); color: var(--green); background: var(--green-soft); }
+
+  /* ── status ── */
+  .status {
+    font-size: .83rem;
+    color: var(--text-dim);
+    text-align: center;
+    margin-bottom: 20px;
+    min-height: 20px;
+  }
+
+  /* ── results grid ── */
+  .results {
+    width: 100%;
+    max-width: 660px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ── card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 20px 22px;
+    transition: border-color .2s, transform .15s;
+    position: relative;
+  }
+
+  .card:hover { border-color: var(--surface-3); transform: translateY(-1px); }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text);
+  }
+
+  .card-source {
+    font-size: .72rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    margin-top: 3px;
+  }
+
+  .card-link {
+    flex-shrink: 0;
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+    text-decoration: none;
+    color: var(--text-dim);
+    transition: all .15s;
+  }
+
+  .card-link:hover { border-color: var(--green); color: var(--green); }
+
+  /* tag row */
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .tag {
+    font-size: .72rem;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: var(--radius-tag);
+  }
+
+  .tag-green  { color: var(--green);  background: var(--green-soft);  }
+  .tag-amber  { color: var(--amber);  background: var(--amber-soft);  }
+  .tag-blue   { color: var(--blue);   background: var(--blue-soft);   }
+  .tag-red    { color: var(--red);    background: var(--red-soft);    }
+  .tag-muted  { color: var(--text-dim); background: var(--surface-2); }
+
+  /* info rows */
+  .card-body { display: flex; flex-direction: column; gap: 8px; }
+
+  .info-row {
+    display: flex;
+    gap: 10px;
+    font-size: .84rem;
+    line-height: 1.5;
+  }
+
+  .info-label {
+    color: var(--text-muted);
+    font-size: .72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    min-width: 90px;
+    padding-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .info-value { color: var(--text-dim); }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 10px 0;
+  }
+
+  /* deadline badge */
+  .deadline-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--amber);
+    background: var(--amber-soft);
+    border-radius: var(--radius-tag);
+    padding: 3px 10px;
+  }
+
+  /* skeleton */
+  .skeleton { animation: shimmer 1.4s ease infinite; }
+
+  @keyframes shimmer {
+    0%,100% { opacity: .4; }
+    50%      { opacity: .9; }
+  }
+
+  .skel-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 20px 22px;
+  }
+
+  .skel-line {
+    background: var(--surface-3);
+    border-radius: 6px;
+    height: 12px;
+    margin-bottom: 10px;
+  }
+
+  /* empty / error */
+  .empty {
+    text-align: center;
+    padding: 48px 0;
+    color: var(--text-muted);
+    font-size: .9rem;
+  }
+
+  .empty svg { margin-bottom: 12px; stroke: var(--text-muted); }
+
+  /* scroll to top */
+  .back-top {
+    display: none;
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-dim);
+    cursor: pointer;
+    align-items: center; justify-content: center;
+    transition: all .15s;
+    z-index: 99;
+  }
+
+  .back-top.visible { display: flex; }
+  .back-top:hover { border-color: var(--green); color: var(--green); }
+</style>
+</head>
+<body>
+
+<!-- hero -->
+<div class="hero">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+      </svg>
+    </div>
+    <span class="logo-text">ScholarFinder</span>
+  </div>
+  <h1>Find your next<br><span>opportunity</span></h1>
+  <p>Describe what you're looking for in plain words — country, field, degree, funding type — and we'll match it.</p>
+</div>
+
+<!-- search -->
+<div class="search-wrap">
+  <div class="search-box">
+    <textarea id="q" rows="1" placeholder="e.g. fully funded masters in Germany for Pakistani students…"></textarea>
+  </div>
+  <button class="send-btn" id="sendBtn" aria-label="Search">
+    <svg class="icon-send" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+    </svg>
+    <svg class="icon-spin" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+      <path d="M21 12a9 9 0 1 1-6.22-8.56"/>
+    </svg>
+  </button>
+
+  <div class="hints" id="hints">
+    <span class="hint">🎓 Fully funded PhD</span>
+    <span class="hint">🌍 Europe masters scholarship</span>
+    <span class="hint">💻 CS internship 2025</span>
+    <span class="hint">🏫 Summer school any field</span>
+    <span class="hint">🇵🇰 Pakistani students abroad</span>
+  </div>
+</div>
+
+<!-- status -->
+<div class="status" id="status"></div>
+
+<!-- results -->
+<div class="results" id="results"></div>
+
+<!-- back to top -->
+<button class="back-top" id="backTop" aria-label="Back to top">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+  </svg>
+</button>
+
+<script>
+const API = 'http://localhost:8000/search';
+
+/* ── textarea auto-resize ── */
+const q = document.getElementById('q');
+q.addEventListener('input', () => {
+  q.style.height = 'auto';
+  q.style.height = Math.min(q.scrollHeight, 140) + 'px';
+});
+
+/* ── hint chips ── */
+document.getElementById('hints').addEventListener('click', e => {
+  const h = e.target.closest('.hint');
+  if (!h) return;
+  q.value = h.textContent.replace(/^.{2}/, '').trim();
+  q.dispatchEvent(new Event('input'));
+  search();
+});
+
+/* ── send button ── */
+const sendBtn  = document.getElementById('sendBtn');
+const statusEl = document.getElementById('status');
+const resultsEl= document.getElementById('results');
+
+sendBtn.addEventListener('click', search);
+q.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); search(); }
+});
+
+/* ── back to top ── */
+const backTop = document.getElementById('backTop');
+window.addEventListener('scroll', () => {
+  backTop.classList.toggle('visible', window.scrollY > 400);
+});
+backTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+/* ── main search ── */
+async function search() {
+  const query = q.value.trim();
+  if (!query) return;
+
+  sendBtn.classList.add('loading');
+  statusEl.textContent = 'Searching…';
+  resultsEl.innerHTML  = skeletons(3);
+
+  try {
+    const res  = await fetch(`${API}?query=${encodeURIComponent(query)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    render(data);
+  } catch (err) {
+    resultsEl.innerHTML = '';
+    statusEl.textContent = '';
+    resultsEl.innerHTML = `
+      <div class="empty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <div>Couldn't reach the API.<br>Make sure <code style="color:var(--green)">uvicorn</code> is running on port 8000.</div>
+      </div>`;
+  } finally {
+    sendBtn.classList.remove('loading');
+  }
+}
+
+/* ── render cards ── */
+function render(items) {
+  resultsEl.innerHTML = '';
+  if (!items || items.length === 0) {
+    statusEl.textContent = '';
+    resultsEl.innerHTML = `
+      <div class="empty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="8" y1="15" x2="16" y2="15"/>
+          <line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+        </svg>
+        <div>No matches found.<br>Try rephrasing or broadening your search.</div>
+      </div>`;
+    return;
+  }
+
+  statusEl.textContent = `${items.length} result${items.length !== 1 ? 's' : ''} found`;
+
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = buildCard(item);
+    resultsEl.appendChild(card);
+  });
+}
+
+function buildCard(d) {
+  const title       = esc(d.title || 'Untitled Opportunity');
+  const sourceUrl   = d.source_url || '#';
+  const sourceDomain= sourceUrl !== '#' ? (new URL(sourceUrl)).hostname.replace('www.','') : '';
+
+  /* tags */
+  const tagMap = {
+    opportunity_type : { cls: 'tag-green',  fmt: v => v.replace(/_/g,' ') },
+    degree_level     : { cls: 'tag-blue',   fmt: v => v.replace(/_/g,' ') },
+    funding_type     : { cls: 'tag-amber',  fmt: v => v === 'full' ? 'fully funded' : v.replace(/_/g,' ') },
+    host_country     : { cls: 'tag-muted',  fmt: v => '📍 ' + v },
+  };
+
+  let tagsHtml = '';
+  for (const [key, { cls, fmt }] of Object.entries(tagMap)) {
+    const val = d[key];
+    if (val && val !== 'not_specified' && val !== 'not_applicable') {
+      tagsHtml += `<span class="tag ${cls}">${esc(fmt(val))}</span>`;
+    }
+  }
+
+  /* deadline */
+  let deadlineHtml = '';
+  if (d.deadline && d.deadline !== 'unknown') {
+    deadlineHtml = `<span class="deadline-badge">⏳ ${esc(d.deadline)}</span>`;
+  }
+
+  /* info rows */
+  const rows = [
+    ['Eligibility',   d.eligibility],
+    ['Field',         d.field_of_study],
+    ['Countries',     d.eligible_countries],
+    ['Language',      d.language_requirement],
+    ['Amount',        d.amount],
+    ['Description',   d.description],
+  ];
+
+  let bodyHtml = '';
+  rows.forEach(([label, value]) => {
+    if (!value || value === 'not_specified' || value === 'unknown') return;
+    bodyHtml += `
+      <div class="info-row">
+        <span class="info-label">${label}</span>
+        <span class="info-value">${esc(value)}</span>
+      </div>`;
+  });
+
+  return `
+    <div class="card-header">
+      <div>
+        <div class="card-title">${title}</div>
+        ${sourceDomain ? `<div class="card-source">${esc(sourceDomain)}</div>` : ''}
+      </div>
+      ${sourceUrl !== '#' ? `
+        <a class="card-link" href="${esc(sourceUrl)}" target="_blank" rel="noopener" aria-label="Open source">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+        </a>` : ''}
+    </div>
+
+    ${tagsHtml ? `<div class="tags">${tagsHtml}</div>` : ''}
+    ${deadlineHtml}
+    ${bodyHtml ? `<div class="divider"></div><div class="card-body">${bodyHtml}</div>` : ''}
+  `;
+}
+
+/* ── skeleton loader ── */
+function skeletons(n) {
+  return Array.from({ length: n }, () => `
+    <div class="skel-card skeleton">
+      <div class="skel-line" style="width:65%;height:14px;margin-bottom:14px"></div>
+      <div class="skel-line" style="width:40%"></div>
+      <div class="skel-line" style="width:55%"></div>
+      <div class="skel-line" style="width:30%"></div>
+    </div>`).join('');
+}
+
+/* ── escape html ── */
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

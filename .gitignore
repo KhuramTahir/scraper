@@ -1,0 +1,42 @@
+# --- Secrets ---
+.env
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+
+# --- Virtual environments ---
+.venv/
+.venv-wsl/
+venv/
+env/
+ENV/
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Playwright ---
+playwright/.auth/
+
+# --- Misc ---
+*.tmp
+*.bak
+html/
